@@ -16,10 +16,14 @@ end
 post '/archive' do
   content_type :json
 
-  begin
-    params = JSON.parse(request.env["rack.input"].read)
-  rescue 
-    return {error: "Error parsing request. Ensure you send a JSON payload"}.to_json
+  if request.content_type.start_with? "application/json"
+    begin
+      payload = JSON.parse(request.env["rack.input"].read)
+    rescue 
+      return {error: "Error parsing request. Ensure you send a JSON or form-encoded payload"}.to_json
+    end
+  else
+    payload = params
   end
 
   # Check required parameters
@@ -31,12 +35,12 @@ post '/archive' do
     'url'
   ]
   required.each do |field|
-    if !params[field]
+    if !payload[field]
       return {error: "Missing field: #{field}"}.to_json
     end
   end
 
-  image_url = params['url']
+  image_url = payload['url']
 
   # Fetch the image
   response = HTTParty.get image_url, follow_redirects: true
@@ -46,23 +50,37 @@ post '/archive' do
   end
 
   # Check content type
-  if !response.headers['content-type'] || !response.headers['content-type'].match(/image\/(png|jpg|jpeg|gif|ico|svg)/)
+  # Either Content-Type or Content-Disposition headers are checked
+  extension = false
+  if c=response.headers['content-type']
+    if m=c.match(/image\/(png|jpg|jpeg|gif|ico|svg)/)
+      extension = m[1]
+    end
+  end
+
+  if extension == false && (c=response.headers['content-disposition'])
+    if m=c.match(/filename=.+\.(png|jpg|jpeg|gif|ico|svg)/)
+      extension = m[1]
+    end
+  end
+
+  if !extension
     return {error: "Input was not a recognized image type"}.to_json
   end
 
-  content_type = response.headers['content-type'].match(/image\/(png|jpg|jpeg|gif|ico|svg)/)[1]
+  extension = 'jpg' if extension == 'jpeg'
 
   # Calculate hash of image contents and check if it already exists in the bucket
   hash = Digest::SHA256.hexdigest response.body
 
   key = build_s3_key image_url, hash
-  # puts "#{key}.#{content_type}"
+  # puts "#{key}.#{extension}"
 
-  public_url = build_public_url params['region'], params['bucket'], key, content_type
+  public_url = build_public_url payload['region'], payload['bucket'], key, extension
   # puts public_url
 
-  s3 = S3::Service.new(access_key_id: params['key_id'], secret_access_key: params['secret_key'])
-  bucket = s3.buckets.find(params['bucket'])
+  s3 = S3::Service.new(access_key_id: payload['key_id'], secret_access_key: payload['secret_key'])
+  bucket = s3.buckets.find(payload['bucket'])
 
   begin
     object = bucket.objects.find "#{key}.meta"
@@ -73,9 +91,9 @@ post '/archive' do
     image_data = response.body
 
     # Resize the image if requested
-    if ['png','jpg','jpeg','gif'].include?(content_type) && params['max_height']
+    if ['png','jpg','gif'].include?(extension) && payload['max_height']
       img = Magick::Image.from_blob(response.body).first
-      img.change_geometry!("x#{params['max_height']}>") { |cols, rows, img|
+      img.change_geometry!("x#{payload['max_height']}>") { |cols, rows, img|
         img.resize! cols, rows
       }
       image_data = img.to_blob
@@ -91,9 +109,9 @@ post '/archive' do
     metadata_obj.acl = :public_read
     metadata_obj.save
 
-    image_obj = bucket.objects.build("#{key}.#{content_type}")
+    image_obj = bucket.objects.build("#{key}.#{extension}")
     image_obj.content = image_data
-    image_obj.content_type = "image/#{content_type}"
+    image_obj.content_type = "image/#{extension}"
     image_obj.acl = :public_read
     image_obj.save
 
