@@ -111,7 +111,7 @@ post '/archive' do
 
     image_obj = bucket.objects.build("#{key}.#{extension}")
     image_obj.content = image_data
-    image_obj.content_type = "image/#{extension}"
+    image_obj.content_type = "image/#{extension == 'jpg' ? 'jpeg' : extension}"
     image_obj.acl = :public_read
     image_obj.save
 
