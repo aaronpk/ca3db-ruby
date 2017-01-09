@@ -76,17 +76,25 @@ post '/archive' do
   key = build_s3_key image_url, hash
   # puts "#{key}.#{extension}"
 
-  public_url = build_public_url payload['region'], payload['bucket'], key, extension
-  # puts public_url
-
   s3 = S3::Service.new(access_key_id: payload['key_id'], secret_access_key: payload['secret_key'])
   bucket = s3.buckets.find(payload['bucket'])
 
   begin
     object = bucket.objects.find "#{key}.meta"
+    # Look up the type in the meta file
+    if m=object.content.match(/type: (.+)/)
+      ext = m[1]
+    else
+      ext = extension
+    end
+
+    public_url = build_public_url payload['region'], payload['bucket'], key, ext
     # If no exception is thrown, the object already exists so return it now
     return {url: public_url, new: false}.to_json
   rescue
+
+    public_url = build_public_url payload['region'], payload['bucket'], key, extension
+    # puts public_url
 
     image_data = response.body
 
@@ -101,7 +109,7 @@ post '/archive' do
 
     # Store the object and metadata in s3 now
     metadata = "date: #{Time.now.strftime('%Y-%m-%dT%H:%M:%S')}\n"\
-      "type: #{content_type}\n"\
+      "type: #{extension}\n"\
       "url: #{image_url}\n"
     metadata_obj = bucket.objects.build("#{key}.meta")
     metadata_obj.content = metadata
