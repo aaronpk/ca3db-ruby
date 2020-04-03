@@ -14,4 +14,5 @@ group :development do
   gem 'shotgun',                :require => nil
   gem 'thin',                   :require => nil
   gem 'puma',                   :require => nil
+  gem 'sinatra-contrib'
 end
