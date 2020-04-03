@@ -16,7 +16,7 @@ end
 post '/archive' do
   content_type :json
 
-  if request.content_type.start_with? "application/json"
+  if request&.content_type.to_s.start_with? "application/json"
     begin
       payload = JSON.parse(request.env["rack.input"].read)
     rescue 
