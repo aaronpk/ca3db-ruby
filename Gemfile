@@ -15,4 +15,5 @@ group :development do
   gem 'thin',                   :require => nil
   gem 'puma',                   :require => nil
   gem 'sinatra-contrib'
+  gem 'byebug'
 end
