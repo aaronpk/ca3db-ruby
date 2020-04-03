@@ -5,6 +5,7 @@ Bundler.require
 require 'digest'
 require 'sinatra'
 require "sinatra/reloader" if development?
+require "byebug" if development?
 
 def build_s3_key(url, hash)
   host = URI.parse(url).host
