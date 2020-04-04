@@ -128,5 +128,8 @@ post '/archive' do
 
     return {url: public_url, new: true}.to_json
   end
+end
 
+not_found do
+  "Not Found"
 end
