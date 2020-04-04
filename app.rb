@@ -133,3 +133,7 @@ end
 not_found do
   "Not Found"
 end
+
+error do
+  nil
+end
