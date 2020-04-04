@@ -1,0 +1,30 @@
+{
+  "name": "CA3DB-Ruby",
+  "description": "A persistent cache for web-content",
+  "keywords": ["indieweb", "community", "ruby", "aaronpk", "cache", "stateless"],
+  "repository": "https://github.com/aaronpk/ca3db-ruby",
+  "addons": [
+  ],
+  "env": {
+    "BASE": {
+      "value": "/app"
+    }
+  },
+  "environments": {
+    "review": {
+      "env": {
+      }
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "free"
+    }
+  },
+  "buildpacks": [
+    {
+      "url": "heroku/ruby"
+    }
+  ]
+}
