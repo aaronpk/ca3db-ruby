@@ -4,6 +4,8 @@ ca3db
 ca3db is a "content-addressable avatar archive", intended for permanently storing
 multiple versions of user avatars found on social networks and websites.
 
+[Heroku](https://heroku.com)[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
+
 ## API
 
 ca3db exposes an HTTP API for archiving images. Once deployed, there is just one API endpoint which accepts the following parameters as a JSON payload:
